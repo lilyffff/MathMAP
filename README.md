@@ -18,7 +18,7 @@ http://127.0.0.1:8600/2026_06_g1_math_practice.html
 
 - 학생: 학번 `10101`, 초기 패스워드 `1`
 - 교사: 휴대폰 번호, 초기 패스워드 `123`
-- 관리자: 앱 이름 `Math맵` 클릭, ID `lily.jeongwon@gmail`, 패스워드 `123`
+- 관리자: 앱 이름 `Math맵` 클릭, ID `lily.jeongwon@gmail.com`, 패스워드 `123`
 
 ## 배포
 

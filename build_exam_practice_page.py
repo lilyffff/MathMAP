@@ -1225,7 +1225,7 @@ def write_html(
     const examSeconds = {EXAM_MINUTES} * 60;
     const labels = ["\\u2460", "\\u2461", "\\u2462", "\\u2463", "\\u2464"];
     const submissionKey = "mathmap-submissions";
-    const adminAccount = {{ id: "lily.jeongwon@gmail", password: "123" }};
+    const adminAccount = {{ id: "lily.jeongwon@gmail.com", password: "123" }};
     let activeExam = examFiles[0];
     let loginRole = "student";
     let currentUser = null;
@@ -1285,7 +1285,7 @@ def write_html(
       }} else {{
         title.textContent = "관리자 로그인";
         idLabel.textContent = "관리자 ID";
-        document.getElementById("loginId").placeholder = "lily.jeongwon@gmail";
+        document.getElementById("loginId").placeholder = "lily.jeongwon@gmail.com";
       }}
     }}
 
