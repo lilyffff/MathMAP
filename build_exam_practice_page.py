@@ -383,6 +383,7 @@ def write_html(
       --admin: #7c3aed;
       --soft: #eef4ff;
       --short: #fff7ed;
+      --radius: 6px;
     }}
     * {{ box-sizing: border-box; }}
     html, body {{ height: 100%; }}
@@ -395,7 +396,27 @@ def write_html(
     }}
     button, input {{ font: inherit; }}
     select {{ font: inherit; }}
+    button, input, select {{
+      border-radius: var(--radius);
+    }}
     .hidden {{ display: none !important; }}
+    .login-panel,
+    .start-box,
+    .file-item,
+    .exam-card,
+    .filter-row,
+    .table-wrap,
+    .stat-card,
+    .topbar,
+    .question-area,
+    .answer-sheet,
+    .short-answer-panel,
+    .score-modal,
+    .explanation-modal,
+    .problem-image,
+    .explanation-image {{
+      border-radius: var(--radius);
+    }}
     .app-shell {{
       min-height: 100%;
       background: var(--bg);
