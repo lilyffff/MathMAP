@@ -1,0 +1,15 @@
+# Core runtime
+python-dotenv
+langchain
+langchain_community
+langchain-openai
+faiss-cpu
+pypdf
+tiktoken
+# Retrieval / evaluation
+rank-bm25
+numpy
+
+# Monitoring section in Day 2
+langfuse
+ipykernel
