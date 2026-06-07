@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 .DS_Store
+uploads/
+generated_exam_page/exams/

@@ -283,6 +283,58 @@
       border: 1px solid #ddd6fe;
       padding: 12px;
     }
+    .upload-panel {
+      background: #fff;
+      border: 1px solid #ddd6fe;
+      padding: 12px;
+      border-radius: var(--radius);
+      display: grid;
+      gap: 10px;
+    }
+    .upload-title {
+      color: var(--admin);
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .upload-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+    .upload-grid label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .upload-grid input[type="file"] {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      padding: 6px;
+      background: #fff;
+    }
+    .upload-btn {
+      min-height: 38px;
+      border: 1px solid var(--admin);
+      background: #fff;
+      color: var(--admin);
+      cursor: pointer;
+      font-weight: 900;
+    }
+    .upload-status {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .upload-status.error {
+      color: #dc2626;
+    }
+    .upload-status.success {
+      color: #15803d;
+    }
     .stat-label {
       color: var(--muted);
       font-size: 13px;
@@ -784,6 +836,21 @@
             <p class="dashboard-sub">앱 전체 응시 현황을 확인합니다.</p>
           </div>
         </div>
+        <form id="examUploadForm" class="upload-panel">
+          <div class="upload-title">새 모의고사 PDF 업로드</div>
+          <div class="upload-grid">
+            <label>
+              문제지 PDF
+              <input id="questionPdfInput" name="questionPdf" type="file" accept="application/pdf" />
+            </label>
+            <label>
+              해설지 PDF
+              <input id="answerPdfInput" name="answerPdf" type="file" accept="application/pdf" />
+            </label>
+            <button id="examUploadBtn" class="upload-btn" type="submit">업로드 및 전처리</button>
+          </div>
+          <div id="uploadStatus" class="upload-status">파일명 공백은 자동으로 제거되어 프로젝트에 저장됩니다.</div>
+        </form>
         <div class="stat-grid">
           <div class="stat-card">
             <div class="stat-label">전체 제출</div>
@@ -876,7 +943,8 @@
   </div>
 
   <script>
-    const examFiles = [{"id": "math_2026_06_g1", "name": "2026학년도6월고1전국연합학력평가문제지.pdf", "explanationPdf": "answer_explanation.pdf", "problems": [{"number": 1, "page": 1, "image": "assets/problem_01.png", "width": 749, "height": 315, "kind": "choice", "labels": [], "correct": "5", "score": 2, "explanation": {"image": "assets/explanation_01.png", "width": 350, "height": 42}}, {"number": 2, "page": 1, "image": "assets/problem_02.png", "width": 749, "height": 476, "kind": "choice", "labels": [], "correct": "1", "score": 2, "explanation": {"image": "assets/explanation_02.png", "width": 350, "height": 105}}, {"number": 3, "page": 1, "image": "assets/problem_03.png", "width": 746, "height": 315, "kind": "choice", "labels": [], "correct": "4", "score": 2, "explanation": {"image": "assets/explanation_03.png", "width": 350, "height": 102}}, {"number": 4, "page": 1, "image": "assets/problem_04.png", "width": 746, "height": 476, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_04.png", "width": 350, "height": 126}}, {"number": 5, "page": 2, "image": "assets/problem_05.png", "width": 749, "height": 378, "kind": "choice", "labels": [], "correct": "4", "score": 3, "explanation": {"image": "assets/explanation_05.png", "width": 350, "height": 159}}, {"number": 6, "page": 2, "image": "assets/problem_06.png", "width": 749, "height": 525, "kind": "choice", "labels": [], "correct": "2", "score": 3, "explanation": {"image": "assets/explanation_06.png", "width": 350, "height": 119}}, {"number": 7, "page": 2, "image": "assets/problem_07.png", "width": 746, "height": 378, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_07.png", "width": 350, "height": 207}}, {"number": 8, "page": 3, "image": "assets/problem_08.png", "width": 749, "height": 343, "kind": "choice", "labels": [], "correct": "2", "score": 3, "explanation": {"image": "assets/explanation_08.png", "width": 320, "height": 221}}, {"number": 9, "page": 3, "image": "assets/problem_09.png", "width": 749, "height": 581, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_09.png", "width": 320, "height": 283}}, {"number": 10, "page": 3, "image": "assets/problem_10.png", "width": 746, "height": 343, "kind": "choice", "labels": [], "correct": "1", "score": 3, "explanation": {"image": "assets/explanation_10.png", "width": 320, "height": 180}}, {"number": 11, "page": 4, "image": "assets/problem_11.png", "width": 749, "height": 364, "kind": "choice", "labels": [], "correct": "1", "score": 3, "explanation": {"image": "assets/explanation_11.png", "width": 320, "height": 185}}, {"number": 12, "page": 4, "image": "assets/problem_12.png", "width": 746, "height": 630, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_12.png", "width": 320, "height": 306}}, {"number": 13, "page": 5, "image": "assets/problem_13.png", "width": 749, "height": 371, "kind": "choice", "labels": [], "correct": "4", "score": 3, "explanation": {"image": "assets/explanation_13.png", "width": 360, "height": 426}}, {"number": 14, "page": 5, "image": "assets/problem_14.png", "width": 746, "height": 1155, "kind": "choice", "labels": [], "correct": "4", "score": 4, "explanation": {"image": "assets/explanation_14.png", "width": 360, "height": 515}}, {"number": 15, "page": 6, "image": "assets/problem_15.png", "width": 749, "height": 399, "kind": "choice", "labels": [], "correct": "5", "score": 4, "explanation": {"image": "assets/explanation_15.png", "width": 360, "height": 329}}, {"number": 16, "page": 6, "image": "assets/problem_16.png", "width": 746, "height": 490, "kind": "choice", "labels": [], "correct": "5", "score": 4, "explanation": {"image": "assets/explanation_16.png", "width": 350, "height": 255}}, {"number": 17, "page": 7, "image": "assets/problem_17.png", "width": 749, "height": 392, "kind": "choice", "labels": [], "correct": "4", "score": 4, "explanation": {"image": "assets/explanation_17.png", "width": 350, "height": 710}}, {"number": 18, "page": 7, "image": "assets/problem_18.png", "width": 746, "height": 910, "kind": "choice", "labels": [], "correct": "2", "score": 4, "explanation": {"image": "assets/explanation_18.png", "width": 350, "height": 209}}, {"number": 19, "page": 8, "image": "assets/problem_19.png", "width": 749, "height": 434, "kind": "choice", "labels": [], "correct": "1", "score": 4, "explanation": {"image": "assets/explanation_19.png", "width": 320, "height": 424}}, {"number": 20, "page": 8, "image": "assets/problem_20.png", "width": 746, "height": 434, "kind": "choice", "labels": [], "correct": "2", "score": 4, "explanation": {"image": "assets/explanation_20.png", "width": 320, "height": 558}}, {"number": 21, "page": 9, "image": "assets/problem_21.png", "width": 749, "height": 462, "kind": "choice", "labels": [], "correct": "1", "score": 4, "explanation": {"image": "assets/explanation_21.png", "width": 320, "height": 43}}, {"number": 22, "page": 9, "image": "assets/problem_22.png", "width": 746, "height": 364, "kind": "short", "labels": ["정답"], "correct": "15", "score": 3, "explanation": {"image": "assets/explanation_22.png", "width": 360, "height": 104}}, {"number": 23, "page": 9, "image": "assets/problem_23.png", "width": 746, "height": 350, "kind": "short", "labels": ["정답"], "correct": "7", "score": 3, "explanation": {"image": "assets/explanation_23.png", "width": 360, "height": 100}}, {"number": 24, "page": 10, "image": "assets/problem_24.png", "width": 749, "height": 322, "kind": "short", "labels": ["정답"], "correct": "6", "score": 3, "explanation": {"image": "assets/explanation_24.png", "width": 360, "height": 121}}, {"number": 25, "page": 10, "image": "assets/problem_25.png", "width": 749, "height": 532, "kind": "short", "labels": ["정답"], "correct": "18", "score": 3, "explanation": {"image": "assets/explanation_25.png", "width": 360, "height": 112}}, {"number": 26, "page": 10, "image": "assets/problem_26.png", "width": 746, "height": 364, "kind": "short", "labels": ["정답"], "correct": "11", "score": 4, "explanation": {"image": "assets/explanation_26.png", "width": 350, "height": 455}}, {"number": 27, "page": 11, "image": "assets/problem_27.png", "width": 749, "height": 924, "kind": "short", "labels": ["정답"], "correct": "82", "score": 4, "explanation": {"image": "assets/explanation_27.png", "width": 350, "height": 300}}, {"number": 28, "page": 11, "image": "assets/problem_28.png", "width": 746, "height": 378, "kind": "short", "labels": ["정답"], "correct": "143", "score": 4, "explanation": {"image": "assets/explanation_28.png", "width": 350, "height": 327}}, {"number": 29, "page": 12, "image": "assets/problem_29.png", "width": 749, "height": 434, "kind": "short", "labels": ["정답"], "correct": "84", "score": 4, "explanation": {"image": "assets/explanation_29.png", "width": 680, "height": 307}}, {"number": 30, "page": 12, "image": "assets/problem_30.png", "width": 746, "height": 434, "kind": "short", "labels": ["정답"], "correct": "23", "score": 4, "explanation": {"image": "assets/explanation_30.png", "width": 680, "height": 880}}]}];
+    const embeddedExamFiles = [{"id": "math_2026_06_g1", "name": "2026학년도6월고1전국연합학력평가문제지.pdf", "explanationPdf": "answer_explanation.pdf", "problems": [{"number": 1, "page": 1, "image": "assets/problem_01.png", "width": 749, "height": 315, "kind": "choice", "labels": [], "correct": "5", "score": 2, "explanation": {"image": "assets/explanation_01.png", "width": 350, "height": 42}}, {"number": 2, "page": 1, "image": "assets/problem_02.png", "width": 749, "height": 476, "kind": "choice", "labels": [], "correct": "1", "score": 2, "explanation": {"image": "assets/explanation_02.png", "width": 350, "height": 105}}, {"number": 3, "page": 1, "image": "assets/problem_03.png", "width": 746, "height": 315, "kind": "choice", "labels": [], "correct": "4", "score": 2, "explanation": {"image": "assets/explanation_03.png", "width": 350, "height": 102}}, {"number": 4, "page": 1, "image": "assets/problem_04.png", "width": 746, "height": 476, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_04.png", "width": 350, "height": 126}}, {"number": 5, "page": 2, "image": "assets/problem_05.png", "width": 749, "height": 378, "kind": "choice", "labels": [], "correct": "4", "score": 3, "explanation": {"image": "assets/explanation_05.png", "width": 350, "height": 159}}, {"number": 6, "page": 2, "image": "assets/problem_06.png", "width": 749, "height": 525, "kind": "choice", "labels": [], "correct": "2", "score": 3, "explanation": {"image": "assets/explanation_06.png", "width": 350, "height": 119}}, {"number": 7, "page": 2, "image": "assets/problem_07.png", "width": 746, "height": 378, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_07.png", "width": 350, "height": 207}}, {"number": 8, "page": 3, "image": "assets/problem_08.png", "width": 749, "height": 343, "kind": "choice", "labels": [], "correct": "2", "score": 3, "explanation": {"image": "assets/explanation_08.png", "width": 320, "height": 221}}, {"number": 9, "page": 3, "image": "assets/problem_09.png", "width": 749, "height": 581, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_09.png", "width": 320, "height": 283}}, {"number": 10, "page": 3, "image": "assets/problem_10.png", "width": 746, "height": 343, "kind": "choice", "labels": [], "correct": "1", "score": 3, "explanation": {"image": "assets/explanation_10.png", "width": 320, "height": 180}}, {"number": 11, "page": 4, "image": "assets/problem_11.png", "width": 749, "height": 364, "kind": "choice", "labels": [], "correct": "1", "score": 3, "explanation": {"image": "assets/explanation_11.png", "width": 320, "height": 185}}, {"number": 12, "page": 4, "image": "assets/problem_12.png", "width": 746, "height": 630, "kind": "choice", "labels": [], "correct": "3", "score": 3, "explanation": {"image": "assets/explanation_12.png", "width": 320, "height": 306}}, {"number": 13, "page": 5, "image": "assets/problem_13.png", "width": 749, "height": 371, "kind": "choice", "labels": [], "correct": "4", "score": 3, "explanation": {"image": "assets/explanation_13.png", "width": 360, "height": 426}}, {"number": 14, "page": 5, "image": "assets/problem_14.png", "width": 746, "height": 1155, "kind": "choice", "labels": [], "correct": "4", "score": 4, "explanation": {"image": "assets/explanation_14.png", "width": 360, "height": 515}}, {"number": 15, "page": 6, "image": "assets/problem_15.png", "width": 749, "height": 399, "kind": "choice", "labels": [], "correct": "5", "score": 4, "explanation": {"image": "assets/explanation_15.png", "width": 360, "height": 329}}, {"number": 16, "page": 6, "image": "assets/problem_16.png", "width": 746, "height": 490, "kind": "choice", "labels": [], "correct": "5", "score": 4, "explanation": {"image": "assets/explanation_16.png", "width": 350, "height": 255}}, {"number": 17, "page": 7, "image": "assets/problem_17.png", "width": 749, "height": 392, "kind": "choice", "labels": [], "correct": "4", "score": 4, "explanation": {"image": "assets/explanation_17.png", "width": 350, "height": 710}}, {"number": 18, "page": 7, "image": "assets/problem_18.png", "width": 746, "height": 910, "kind": "choice", "labels": [], "correct": "2", "score": 4, "explanation": {"image": "assets/explanation_18.png", "width": 350, "height": 209}}, {"number": 19, "page": 8, "image": "assets/problem_19.png", "width": 749, "height": 434, "kind": "choice", "labels": [], "correct": "1", "score": 4, "explanation": {"image": "assets/explanation_19.png", "width": 320, "height": 424}}, {"number": 20, "page": 8, "image": "assets/problem_20.png", "width": 746, "height": 434, "kind": "choice", "labels": [], "correct": "2", "score": 4, "explanation": {"image": "assets/explanation_20.png", "width": 320, "height": 558}}, {"number": 21, "page": 9, "image": "assets/problem_21.png", "width": 749, "height": 462, "kind": "choice", "labels": [], "correct": "1", "score": 4, "explanation": {"image": "assets/explanation_21.png", "width": 320, "height": 43}}, {"number": 22, "page": 9, "image": "assets/problem_22.png", "width": 746, "height": 364, "kind": "short", "labels": ["정답"], "correct": "15", "score": 3, "explanation": {"image": "assets/explanation_22.png", "width": 360, "height": 104}}, {"number": 23, "page": 9, "image": "assets/problem_23.png", "width": 746, "height": 350, "kind": "short", "labels": ["정답"], "correct": "7", "score": 3, "explanation": {"image": "assets/explanation_23.png", "width": 360, "height": 100}}, {"number": 24, "page": 10, "image": "assets/problem_24.png", "width": 749, "height": 322, "kind": "short", "labels": ["정답"], "correct": "6", "score": 3, "explanation": {"image": "assets/explanation_24.png", "width": 360, "height": 121}}, {"number": 25, "page": 10, "image": "assets/problem_25.png", "width": 749, "height": 532, "kind": "short", "labels": ["정답"], "correct": "18", "score": 3, "explanation": {"image": "assets/explanation_25.png", "width": 360, "height": 112}}, {"number": 26, "page": 10, "image": "assets/problem_26.png", "width": 746, "height": 364, "kind": "short", "labels": ["정답"], "correct": "11", "score": 4, "explanation": {"image": "assets/explanation_26.png", "width": 350, "height": 455}}, {"number": 27, "page": 11, "image": "assets/problem_27.png", "width": 749, "height": 924, "kind": "short", "labels": ["정답"], "correct": "82", "score": 4, "explanation": {"image": "assets/explanation_27.png", "width": 350, "height": 300}}, {"number": 28, "page": 11, "image": "assets/problem_28.png", "width": 746, "height": 378, "kind": "short", "labels": ["정답"], "correct": "143", "score": 4, "explanation": {"image": "assets/explanation_28.png", "width": 350, "height": 327}}, {"number": 29, "page": 12, "image": "assets/problem_29.png", "width": 749, "height": 434, "kind": "short", "labels": ["정답"], "correct": "84", "score": 4, "explanation": {"image": "assets/explanation_29.png", "width": 680, "height": 307}}, {"number": 30, "page": 12, "image": "assets/problem_30.png", "width": 746, "height": 434, "kind": "short", "labels": ["정답"], "correct": "23", "score": 4, "explanation": {"image": "assets/explanation_30.png", "width": 680, "height": 880}}]}];
+    let examFiles = [...embeddedExamFiles];
     const total = 30;
     const examSeconds = 50 * 60;
     const labels = ["\u2460", "\u2461", "\u2462", "\u2463", "\u2464"];
@@ -958,6 +1026,64 @@
       explanationEnabled = false;
       setLoginRole("student");
       showOnly("authScreen");
+    }
+
+    async function loadServerExams() {
+      try {
+        const response = await fetch("api/exams", { cache: "no-store" });
+        if (!response.ok) throw new Error("server unavailable");
+        const data = await response.json();
+        if (Array.isArray(data.exams) && data.exams.length > 0) {
+          examFiles = data.exams;
+          activeExam = examFiles[0];
+          return true;
+        }
+      } catch {
+        examFiles = [...embeddedExamFiles];
+        activeExam = examFiles[0];
+      }
+      return false;
+    }
+
+    function setUploadStatus(message, type = "") {
+      const status = document.getElementById("uploadStatus");
+      status.textContent = message;
+      status.className = `upload-status ${type}`;
+    }
+
+    async function handleExamUpload(event) {
+      event.preventDefault();
+      const question = document.getElementById("questionPdfInput").files[0];
+      const answer = document.getElementById("answerPdfInput").files[0];
+      if (!question || !answer) {
+        setUploadStatus("문제지 PDF와 해설지 PDF를 모두 선택하세요.", "error");
+        return;
+      }
+
+      const form = new FormData();
+      form.append("questionPdf", question);
+      form.append("answerPdf", answer);
+      setUploadStatus("업로드 및 전처리 중입니다. 잠시만 기다려 주세요.");
+      document.getElementById("examUploadBtn").disabled = true;
+      try {
+        const response = await fetch("api/upload-exam", {
+          method: "POST",
+          body: form,
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "업로드에 실패했습니다.");
+        }
+        examFiles = data.exams || examFiles;
+        activeExam = examFiles[0];
+        renderFileList();
+        document.getElementById("examUploadForm").reset();
+        setUploadStatus(`${data.exam.name} 전처리가 완료되어 학생 카드에 추가되었습니다.`, "success");
+      } catch (error) {
+        setUploadStatus(`${error.message} 서버 모드(mathmap_server.py)에서 실행해야 업로드할 수 있습니다.`, "error");
+      } finally {
+        document.getElementById("examUploadBtn").disabled = false;
+      }
     }
 
     function loadAnswers() {
@@ -1147,7 +1273,7 @@
       }, 1000);
     }
 
-    function handleLogin(event) {
+    async function handleLogin(event) {
       event.preventDefault();
       const id = document.getElementById("loginId").value.trim();
       const password = document.getElementById("loginPw").value.trim();
@@ -1161,6 +1287,7 @@
           return;
         }
         currentUser = student;
+        await loadServerExams();
         document.getElementById("studentSessionLabel").textContent =
           `${student.grade}학년 ${student.classNo}반 ${student.number}번`;
         showStartScreen();
@@ -1185,6 +1312,7 @@
         return;
       }
       currentUser = { id, role: "admin" };
+      await loadServerExams();
       document.getElementById("adminSessionLabel").textContent = `관리자 ${id}`;
       renderAdminDashboard();
       showOnly("adminScreen");
@@ -1492,6 +1620,7 @@
     document.getElementById("teacherTabBtn").addEventListener("click", () => setLoginRole("teacher"));
     document.getElementById("brandBtn").addEventListener("click", () => setLoginRole("admin"));
     document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    document.getElementById("examUploadForm").addEventListener("submit", handleExamUpload);
     document.getElementById("teacherGradeSelect").addEventListener("change", renderTeacherRecords);
     document.getElementById("teacherClassSelect").addEventListener("change", renderTeacherRecords);
     document.querySelectorAll(".logoutBtn").forEach(button => button.addEventListener("click", logout));
@@ -1512,6 +1641,7 @@
     });
 
     renderGradeClassOptions();
+    loadServerExams();
     setLoginRole("student");
     showOnly("authScreen");
   </script>

@@ -13,3 +13,4 @@ numpy
 # Monitoring section in Day 2
 langfuse
 ipykernel
+flask

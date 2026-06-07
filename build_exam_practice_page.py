@@ -648,6 +648,58 @@ def write_html(
       border: 1px solid #ddd6fe;
       padding: 12px;
     }}
+    .upload-panel {{
+      background: #fff;
+      border: 1px solid #ddd6fe;
+      padding: 12px;
+      border-radius: var(--radius);
+      display: grid;
+      gap: 10px;
+    }}
+    .upload-title {{
+      color: var(--admin);
+      font-size: 16px;
+      font-weight: 900;
+    }}
+    .upload-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }}
+    .upload-grid label {{
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }}
+    .upload-grid input[type="file"] {{
+      min-height: 38px;
+      border: 1px solid var(--line);
+      padding: 6px;
+      background: #fff;
+    }}
+    .upload-btn {{
+      min-height: 38px;
+      border: 1px solid var(--admin);
+      background: #fff;
+      color: var(--admin);
+      cursor: pointer;
+      font-weight: 900;
+    }}
+    .upload-status {{
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }}
+    .upload-status.error {{
+      color: #dc2626;
+    }}
+    .upload-status.success {{
+      color: #15803d;
+    }}
     .stat-label {{
       color: var(--muted);
       font-size: 13px;
@@ -1149,6 +1201,21 @@ def write_html(
             <p class="dashboard-sub">앱 전체 응시 현황을 확인합니다.</p>
           </div>
         </div>
+        <form id="examUploadForm" class="upload-panel">
+          <div class="upload-title">새 모의고사 PDF 업로드</div>
+          <div class="upload-grid">
+            <label>
+              문제지 PDF
+              <input id="questionPdfInput" name="questionPdf" type="file" accept="application/pdf" />
+            </label>
+            <label>
+              해설지 PDF
+              <input id="answerPdfInput" name="answerPdf" type="file" accept="application/pdf" />
+            </label>
+            <button id="examUploadBtn" class="upload-btn" type="submit">업로드 및 전처리</button>
+          </div>
+          <div id="uploadStatus" class="upload-status">파일명 공백은 자동으로 제거되어 프로젝트에 저장됩니다.</div>
+        </form>
         <div class="stat-grid">
           <div class="stat-card">
             <div class="stat-label">전체 제출</div>
@@ -1241,7 +1308,8 @@ def write_html(
   </div>
 
   <script>
-    const examFiles = {exam_files_json};
+    const embeddedExamFiles = {exam_files_json};
+    let examFiles = [...embeddedExamFiles];
     const total = {TOTAL_PROBLEMS};
     const examSeconds = {EXAM_MINUTES} * 60;
     const labels = ["\\u2460", "\\u2461", "\\u2462", "\\u2463", "\\u2464"];
@@ -1323,6 +1391,64 @@ def write_html(
       explanationEnabled = false;
       setLoginRole("student");
       showOnly("authScreen");
+    }}
+
+    async function loadServerExams() {{
+      try {{
+        const response = await fetch("api/exams", {{ cache: "no-store" }});
+        if (!response.ok) throw new Error("server unavailable");
+        const data = await response.json();
+        if (Array.isArray(data.exams) && data.exams.length > 0) {{
+          examFiles = data.exams;
+          activeExam = examFiles[0];
+          return true;
+        }}
+      }} catch {{
+        examFiles = [...embeddedExamFiles];
+        activeExam = examFiles[0];
+      }}
+      return false;
+    }}
+
+    function setUploadStatus(message, type = "") {{
+      const status = document.getElementById("uploadStatus");
+      status.textContent = message;
+      status.className = `upload-status ${{type}}`;
+    }}
+
+    async function handleExamUpload(event) {{
+      event.preventDefault();
+      const question = document.getElementById("questionPdfInput").files[0];
+      const answer = document.getElementById("answerPdfInput").files[0];
+      if (!question || !answer) {{
+        setUploadStatus("문제지 PDF와 해설지 PDF를 모두 선택하세요.", "error");
+        return;
+      }}
+
+      const form = new FormData();
+      form.append("questionPdf", question);
+      form.append("answerPdf", answer);
+      setUploadStatus("업로드 및 전처리 중입니다. 잠시만 기다려 주세요.");
+      document.getElementById("examUploadBtn").disabled = true;
+      try {{
+        const response = await fetch("api/upload-exam", {{
+          method: "POST",
+          body: form,
+        }});
+        const data = await response.json().catch(() => ({{}}));
+        if (!response.ok) {{
+          throw new Error(data.error || "업로드에 실패했습니다.");
+        }}
+        examFiles = data.exams || examFiles;
+        activeExam = examFiles[0];
+        renderFileList();
+        document.getElementById("examUploadForm").reset();
+        setUploadStatus(`${{data.exam.name}} 전처리가 완료되어 학생 카드에 추가되었습니다.`, "success");
+      }} catch (error) {{
+        setUploadStatus(`${{error.message}} 서버 모드(mathmap_server.py)에서 실행해야 업로드할 수 있습니다.`, "error");
+      }} finally {{
+        document.getElementById("examUploadBtn").disabled = false;
+      }}
     }}
 
     function loadAnswers() {{
@@ -1512,7 +1638,7 @@ def write_html(
       }}, 1000);
     }}
 
-    function handleLogin(event) {{
+    async function handleLogin(event) {{
       event.preventDefault();
       const id = document.getElementById("loginId").value.trim();
       const password = document.getElementById("loginPw").value.trim();
@@ -1526,6 +1652,7 @@ def write_html(
           return;
         }}
         currentUser = student;
+        await loadServerExams();
         document.getElementById("studentSessionLabel").textContent =
           `${{student.grade}}학년 ${{student.classNo}}반 ${{student.number}}번`;
         showStartScreen();
@@ -1550,6 +1677,7 @@ def write_html(
         return;
       }}
       currentUser = {{ id, role: "admin" }};
+      await loadServerExams();
       document.getElementById("adminSessionLabel").textContent = `관리자 ${{id}}`;
       renderAdminDashboard();
       showOnly("adminScreen");
@@ -1857,6 +1985,7 @@ def write_html(
     document.getElementById("teacherTabBtn").addEventListener("click", () => setLoginRole("teacher"));
     document.getElementById("brandBtn").addEventListener("click", () => setLoginRole("admin"));
     document.getElementById("loginForm").addEventListener("submit", handleLogin);
+    document.getElementById("examUploadForm").addEventListener("submit", handleExamUpload);
     document.getElementById("teacherGradeSelect").addEventListener("change", renderTeacherRecords);
     document.getElementById("teacherClassSelect").addEventListener("change", renderTeacherRecords);
     document.querySelectorAll(".logoutBtn").forEach(button => button.addEventListener("click", logout));
@@ -1877,6 +2006,7 @@ def write_html(
     }});
 
     renderGradeClassOptions();
+    loadServerExams();
     setLoginRole("student");
     showOnly("authScreen");
   </script>
