@@ -18,6 +18,11 @@ UPLOAD_DIR = ROOT / "uploads"
 EXAM_DIR = WEB_DIR / "exams"
 REGISTRY_PATH = EXAM_DIR / "registry.json"
 QUESTION_PAGE_WIDTH = 1088
+QUESTION_START_RE = re.compile(r"^([1-9]|[12][0-9]|30)\.")
+QUESTION_COLUMNS = [
+    (45.0, 292.0),
+    (294.0, 550.0),
+]
 
 app = Flask(__name__, static_folder=None)
 
@@ -87,7 +92,55 @@ def render_question_pages(question_pdf: Path, asset_dir: Path) -> None:
         pix.save(str(asset_dir / f"page_{page_index + 1:02d}_problems.png"))
 
 
+def question_column_index(x0: float) -> int:
+    return 0 if x0 < 295 else 1
+
+
+def collect_question_starts(question_pdf: Path) -> dict[int, dict[str, object]]:
+    starts: dict[int, dict[str, object]] = {}
+    doc = fitz.open(str(question_pdf))
+    for page_index, page in enumerate(doc):
+        for block in page.get_text("dict")["blocks"]:
+            for line in block.get("lines", []):
+                text = "".join(span["text"] for span in line["spans"]).strip()
+                match = QUESTION_START_RE.match(text)
+                if not match:
+                    continue
+
+                number = int(match.group(1))
+                if 1 <= number <= builder.TOTAL_PROBLEMS and number not in starts:
+                    x0, y0, x1, y1 = line["bbox"]
+                    starts[number] = {
+                        "number": number,
+                        "page_index": page_index,
+                        "column": question_column_index(x0),
+                        "bbox": (x0, y0, x1, y1),
+                    }
+    return starts
+
+
+def question_clip_rect(
+    page: fitz.Page,
+    item: dict[str, object],
+    starts_by_group: dict[tuple[int, int], list[dict[str, object]]],
+) -> fitz.Rect:
+    number = int(item["number"])
+    column = int(item["column"])
+    _, y0, _, _ = item["bbox"]
+    x0, x1 = QUESTION_COLUMNS[column]
+    group = starts_by_group[(int(item["page_index"]), column)]
+    index = group.index(item)
+    if index + 1 < len(group):
+        next_y = group[index + 1]["bbox"][1]
+    else:
+        next_y = page.rect.height - 92
+
+    top_padding = 14 if number in {1, 3} else 8
+    return fitz.Rect(x0, max(0, y0 - top_padding), x1, min(page.rect.height, next_y - 8))
+
+
 def render_uploaded_problem_images(
+    question_pdf: Path,
     asset_dir: Path,
     image_prefix: str,
     short_answers: dict[int, list[str]],
@@ -96,30 +149,36 @@ def render_uploaded_problem_images(
     explanations: dict[int, dict[str, object]],
 ) -> list[dict[str, object]]:
     problems: list[dict[str, object]] = []
-    for number in range(1, builder.TOTAL_PROBLEMS + 1):
-        page_no, x0, y0, x1, y1 = builder.PAGE_IMAGE_RECTS[number]
-        page_image = asset_dir / f"page_{page_no:02d}_problems.png"
-        if not page_image.exists():
-            raise FileNotFoundError(f"문제지 PDF에서 {page_no}페이지를 찾을 수 없습니다.")
+    doc = fitz.open(str(question_pdf))
+    starts = collect_question_starts(question_pdf)
+    starts_by_group: dict[tuple[int, int], list[dict[str, object]]] = {}
+    for item in starts.values():
+        starts_by_group.setdefault((int(item["page_index"]), int(item["column"])), []).append(item)
+    for group in starts_by_group.values():
+        group.sort(key=lambda value: value["bbox"][1])
 
-        doc = fitz.open(str(page_image))
-        page = doc[0]
-        clip = fitz.Rect(x0, max(0, y0 - builder.TOP_MARGIN_PX), x1, y1) & page.rect
-        pix = page.get_pixmap(matrix=fitz.Matrix(1.4, 1.4), clip=clip, alpha=False)
+    for number in range(1, builder.TOTAL_PROBLEMS + 1):
+        if number not in starts:
+            raise FileNotFoundError(f"문제지 PDF에서 {number}번 문항 위치를 찾을 수 없습니다.")
+
+        item = starts[number]
+        page = doc[int(item["page_index"])]
+        clip = question_clip_rect(page, item, starts_by_group) & page.rect
+        pix = page.get_pixmap(matrix=fitz.Matrix(2.2, 2.2), clip=clip, alpha=False)
         image_name = f"problem_{number:02d}.png"
         pix.save(str(asset_dir / image_name))
 
         labels = short_answers.get(number, [])
-        if number <= 21 and answer_key.get(number) in {"1", "2", "3", "4", "5"}:
+        if number <= 21:
             labels = []
         if number >= 22:
-            labels = builder.DEFAULT_SHORT_ANSWER_LABELS.get(number, labels or ["정답"])
+            labels = ["정답"]
 
         explanation = explanations.get(number, {})
         problems.append(
             {
                 "number": number,
-                "page": page_no,
+                "page": int(item["page_index"]) + 1,
                 "image": f"{image_prefix}/assets/{image_name}",
                 "width": pix.width,
                 "height": pix.height,
@@ -170,6 +229,7 @@ def process_uploaded_exam(question_pdf: Path, answer_pdf: Path) -> dict:
     explanations = render_uploaded_explanations(answer_pdf, asset_dir, image_prefix)
     short_answers = builder.detect_short_answer_numbers(question_pdf)
     problems = render_uploaded_problem_images(
+        question_pdf,
         asset_dir,
         image_prefix,
         short_answers,
